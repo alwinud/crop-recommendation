@@ -2,11 +2,15 @@ from flask import Flask, request, render_template
 import numpy as np
 import pandas as pd
 import pickle
-
-# Importing model
 import os
+
+# Load the trained model
 model_path = os.path.join(os.path.dirname(__file__), 'model.pkl')
 model = pickle.load(open(model_path, 'rb'))
+
+# Load the scaler (MinMaxScaler)
+scaler_path = os.path.join(os.path.dirname(__file__), 'scaler.pkl')
+scaler = pickle.load(open(scaler_path, 'rb'))
 
 # Creating Flask app
 app = Flask(__name__)
@@ -18,7 +22,7 @@ def index():
 @app.route("/predict", methods=['POST'])
 def predict():
     try:
-        # Getting input values
+        # Getting input values from the form
         N = int(request.form['Nitrogen'])
         P = int(request.form['Phosporus'])
         K = int(request.form['Potassium'])
@@ -30,6 +34,9 @@ def predict():
         # Creating input array
         feature_list = [N, P, K, Temperature, Humidity, ph, Rainfall]
         single_pred = np.array(feature_list).reshape(1, -1)
+
+        # Apply feature scaling
+        single_pred = scaler.transform(single_pred)
 
         # Making prediction
         prediction = model.predict(single_pred)
@@ -59,4 +66,3 @@ def predict():
 # Running the Flask app
 if __name__ == "__main__":
     app.run(debug=True)
-
